@@ -1,0 +1,16 @@
+version: "3"
+
+services:
+  log-aggregator:
+#    build:
+#      context: .
+#      dockerfile: Dockerfile
+    image: registry.tradelab.in/log-aggregator:test-1
+    deploy:
+      mode: replicated
+      replicas: 1
+    network_mode: host
+    ports:
+      - "8083:8083"
+    volumes:
+      - ./config/config.json:/etc/log-aggregator/config.json

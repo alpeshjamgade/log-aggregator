@@ -1,0 +1,60 @@
+stages:
+  - build
+  - docker-build
+  - docker-push
+  - test
+
+variables:
+  APP_NAME: $CI_PROJECT_NAME
+  APP_BINARY: "${APP_NAME}App"
+  IMAGE_NAME: registry.tradelab.in/$APP_NAME:$CI_COMMIT_REF_NAME
+  DOCKER_IMAGE: docker:20.10.22
+  DOCKER_DIND_IMAGE: docker:dind
+
+build:
+  stage: build
+  image: golang:1.23.0
+  script:
+    - go build -o _build/${APP_BINARY} ./cmd/main.go
+    - ps aux
+  rules:
+    - if: '$CI_COMMIT_REF_NAME !~ /^Release.*/'
+      when: always
+    - when: never
+
+docker-build:
+  stage: docker-build
+  image: $DOCKER_IMAGE
+  services:
+    - name: $DOCKER_DIND_IMAGE
+      alias: docker
+  script:
+    - docker build -f Dockerfile -t $IMAGE_NAME .
+    - echo $IMAGE_NAME
+  dependencies: [ "build" ]
+  rules:
+    - if: '$CI_COMMIT_REF_NAME =~ /^Release.*/'
+    - when: never
+
+docker-push:
+  stage: docker-push
+  image: $DOCKER_IMAGE
+  services:
+    - name: $DOCKER_DIND_IMAGE
+      alias: docker
+  before_script:
+    - echo "$CI_REGISTRY_PASSWORD" | docker login registry.tradelab.in -u "$CI_REGISTRY_USER" --password-stdin
+  after_script:
+    - docker logout registry.tradelab.in
+    - apk add curl
+    - >
+      echo "Branch is a Release branch, protecting it...";
+      curl --request POST \
+        --header "PRIVATE-TOKEN: $CI_JOB_TOKEN" \
+        --url "https://gitlab.tradelab.in/api/v4/projects/$CI_PROJECT_ID/protected_branches?name=$CI_COMMIT_REF_NAME&push_access_level=30&merge_access_level=30&unprotect_access_level=40"
+  script:
+    - docker push $IMAGE_NAME
+    - echo $IMAGE_NAME
+  rules:
+    - if: '$CI_COMMIT_REF_NAME =~ /^Release.*/'
+    - when: never
