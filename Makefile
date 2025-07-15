@@ -1,5 +1,6 @@
 APP_BINARY=logAggregatorApp
-DATABASE_URL="postgresql://postgres:postgres@localhost:5432/log_aggregator?sslmode=disable"
+DATABASE_NAME=log_aggregator
+CLICKHOUSE_URL="clickhouse://default:@localhost:9000"
 MIGRATION_PATH="./private/migrations/"
 
 # Build binary
@@ -26,14 +27,21 @@ dockerize:
 	docker build -t registry.tradelab.in/log-aggregator:$(TAG) .
 	@echo "Done!"
 
+# ClickHouse Migration Commands (using clickhouse-cli or ch-migrate)
 migration_create:
-	migrate create -ext sql -dir ${MIGRATION_PATH} -seq ${name}
+	@echo "Creating migration not supported via CLI for ClickHouse."
+	@echo "Please create a new SQL file manually in ${MIGRATION_PATH}"
 
 migration_up:
-	migrate -path ${MIGRATION_PATH} -database ${DATABASE_URL} -verbose up ${NUMBER}
+	@echo "Running migration..."
+	clickhouse-client --database=$(DATABASE_NAME) --query="$(shell cat ${MIGRATION_PATH}/*.up.sql | tr '\n' ' ')"
+	@echo "Done!"
 
 migration_down:
-	migrate -path ${MIGRATION_PATH} -database ${DATABASE_URL} -verbose down ${NUMBER}
+	@echo "Rolling back migration..."
+	clickhouse-client --database=$(DATABASE_NAME) --query="$(shell cat ${MIGRATION_PATH}/*.down.sql | tr '\n' ' ')"
+	@echo "Done!"
 
 migration_fix:
-	migrate -path ${MIGRATION_PATH} -database ${DATABASE_URL} force ${VERSION}
+	@echo "ClickHouse does not track migration versions like other DBs."
+	@echo "Use a manual table to manage migration state if needed."

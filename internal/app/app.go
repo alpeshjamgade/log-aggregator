@@ -2,15 +2,18 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"go.uber.org/zap"
 	"log"
 	"log-aggregator/config"
 	"log-aggregator/internal/client"
-	consumer "log-aggregator/internal/collector"
 	"log-aggregator/internal/constants"
+	"log-aggregator/internal/handler"
 	"log-aggregator/internal/logger"
 	"log-aggregator/internal/repo"
+	"log-aggregator/internal/service"
 	"log-aggregator/internal/utils"
+	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
@@ -40,18 +43,20 @@ func (app *App) Start() {
 		Logger = logger.CreateFileLoggerWithCtx(ctx)
 	}
 
-	RmqClient, DB, HttpClient := client.GetClients(ctx)
-	Repo := repo.NewRepo(DB, HttpClient)
+	Router := GetRouter()
+	DB, HttpClient := client.GetClients(ctx)
 
-	Consumer := consumer.NewConsumer(ctx, RmqClient, Repo)
+	Repo := repo.NewRepo(DB, HttpClient)
+	Service := service.NewService(Repo)
+	Handler := handler.NewHandler(Service)
+	Handler.SetupRoutes(Router)
 
 	go func() {
-		Logger.Info("starting collector")
-
-		Consumer.Start(ctx)
+		Logger.Infof("starting server on http://0.0.0.0:%s", config.HttpPort)
+		http.ListenAndServe(fmt.Sprintf(":%s", config.HttpPort), Router)
 	}()
 
 	<-ctx.Done()
 
-	Logger.Info("shutting down collector")
+	Logger.Info("shutting down server")
 }

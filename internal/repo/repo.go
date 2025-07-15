@@ -1,10 +1,15 @@
 package repo
 
 import (
-	"log"
+	"context"
 	"log-aggregator/internal/client/db"
+	"log-aggregator/internal/models"
 	"net/http"
 )
+
+type IRepo interface {
+	SaveEvent(ctx context.Context, event *models.Event) error
+}
 
 type Repo struct {
 	DB         db.DB
@@ -13,17 +18,4 @@ type Repo struct {
 
 func NewRepo(db db.DB, httpClient *http.Client) *Repo {
 	return &Repo{DB: db, HttpClient: httpClient}
-}
-
-func (repo *Repo) InsertEvent(event string) error {
-	_, err := repo.DB.DB().Exec(
-		"INSERT INTO events(data) VALUES ($1)",
-		event,
-	)
-
-	if err != nil {
-		log.Printf("Error inserting event: %v", err)
-		return err
-	}
-	return nil
 }

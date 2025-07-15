@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	amqp "github.com/rabbitmq/amqp091-go"
 	"go.elastic.co/apm/module/apmhttp/v2"
 	"log-aggregator/config"
 	"log-aggregator/internal/client/db"
@@ -13,12 +12,11 @@ import (
 )
 
 var (
-	HttpClient *http.Client     = nil
-	RMQClient  *amqp.Connection = nil
-	DbClient   db.DB            = nil
+	HttpClient *http.Client = nil
+	DbClient   db.DB
 )
 
-func GetClients(ctx context.Context) (*amqp.Connection, db.DB, *http.Client) {
+func GetClients(ctx context.Context) (db.DB, *http.Client) {
 
 	Logger := logger.CreateFileLoggerWithCtx(ctx)
 
@@ -34,20 +32,13 @@ func GetClients(ctx context.Context) (*amqp.Connection, db.DB, *http.Client) {
 		},
 	})
 
-	dbUrl := config.DatabaseURL
-	DbClient = db.NewPostgresDB(dbUrl)
+	dbUrl := config.ClickHouseDBAddr
+	DbClient = db.NewClickHouseDB(dbUrl)
 	err = DbClient.Connect(ctx)
 	if err != nil {
 		Logger.Panic(err)
 		os.Exit(1)
 	}
 
-	RMQClient, err = amqp.Dial(config.RMQUrl)
-	if err != nil {
-		Logger.DPanicf("Failed to connect to RabbitMQ: %v", err)
-	}
-
-	Logger.Info("Connected to RabbitMQ")
-
-	return RMQClient, DbClient, HttpClient
+	return DbClient, HttpClient
 }

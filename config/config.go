@@ -12,7 +12,7 @@ var (
 	LogFileMaxSize     = 500
 	LogFilePath        = "/tmp/"
 	HttpPort           = "8080"
-	DatabaseURL        = "postgres://postgres:postgres@localhost:5432/log_aggregator?sslmode=disable"
+	ClickHouseDBAddr   = "localhost:9000"
 	SessionKey         = ""
 	RMQUrl             = "amqp://guest:guest@localhost:5672"
 	LogFilePathsToSeek []string
@@ -43,7 +43,7 @@ func LoadConfig() error {
 	LogFileMaxSize = viper.GetInt("LOG_FILE_MAX_SIZE")
 	LogFilePath = viper.GetString("LOG_FILE_PATH")
 	HttpPort = viper.GetString("HTTP_PORT")
-	DatabaseURL = viper.GetString("DATABASE_URL")
+	ClickHouseDBAddr = viper.GetString("CLICKEHOUSE_DB_ADDR")
 	SessionKey = viper.GetString("SESSION_KEY")
 	RMQUrl = viper.GetString("RMQ_URL")
 	LogFilePathsToSeek = viper.GetStringSlice("LOG_FILE_PATHS_TO_SEEK")
@@ -58,7 +58,7 @@ func setDefaults() {
 	viper.SetDefault("LOG_FILE_MAX_SIZE", LogFileMaxSize)
 	viper.SetDefault("LOG_FILE_PATH", LogFilePath)
 	viper.SetDefault("HTTP_PORT", HttpPort)
-	viper.SetDefault("DATABASE_URL", DatabaseURL)
+	viper.SetDefault("CLICKEHOUSE_DB_ADDR", ClickHouseDBAddr)
 	viper.SetDefault("SESSION_KEY", SessionKey)
 	viper.SetDefault("RMQ_URL", RMQUrl)
 	viper.SetDefault("LOG_FILE_PATHS_TO_SEEK", LogFilePathsToSeek)
