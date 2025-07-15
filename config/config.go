@@ -12,7 +12,7 @@ var (
 	LogFileMaxSize     = 500
 	LogFilePath        = "/tmp/"
 	HttpPort           = "8080"
-	DatabaseURL        = "postgres://postgres:postgres@localhost:5432/openapi?sslmode=disable"
+	DatabaseURL        = "postgres://postgres:postgres@localhost:5432/log_aggregator?sslmode=disable"
 	SessionKey         = ""
 	RMQUrl             = "amqp://guest:guest@localhost:5672"
 	LogFilePathsToSeek []string

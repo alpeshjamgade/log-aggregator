@@ -1,4 +1,6 @@
 APP_BINARY=logAggregatorApp
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/log_aggregator?sslmode=disable"
+MIGRATION_PATH="./private/migrations/"
 
 # Build binary
 build-binary:
@@ -23,3 +25,15 @@ dockerize:
 	@echo "Building app..."
 	docker build -t registry.tradelab.in/log-aggregator:$(TAG) .
 	@echo "Done!"
+
+migration_create:
+	migrate create -ext sql -dir ${MIGRATION_PATH} -seq ${name}
+
+migration_up:
+	migrate -path ${MIGRATION_PATH} -database ${DATABASE_URL} -verbose up ${NUMBER}
+
+migration_down:
+	migrate -path ${MIGRATION_PATH} -database ${DATABASE_URL} -verbose down ${NUMBER}
+
+migration_fix:
+	migrate -path ${MIGRATION_PATH} -database ${DATABASE_URL} force ${VERSION}
