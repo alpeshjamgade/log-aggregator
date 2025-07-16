@@ -9,6 +9,7 @@ import (
 
 type IRepo interface {
 	SaveLog(ctx context.Context, log *models.Log) error
+	SaveBulkLog(ctx context.Context, log []*models.Log) error
 }
 
 type Repo struct {

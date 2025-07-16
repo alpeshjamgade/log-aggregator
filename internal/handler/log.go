@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"log-aggregator/internal/constants"
 	"log-aggregator/internal/logger"
 	"log-aggregator/internal/models"
@@ -12,7 +13,7 @@ func (h *Handler) SaveLog(w http.ResponseWriter, r *http.Request) {
 	ctx := utils.ContextWithValueIfNotPresent(r.Context(), constants.TraceID, utils.GetUUID())
 	Logger := logger.CreateFileLoggerWithCtx(ctx)
 
-	req := &models.RawLog{}
+	req := &models.FluentBitReq{}
 	res := &models.HTTPResponse{Data: map[string]any{}, Status: "success", Message: constants.Empty}
 
 	err := utils.ReadJSON(w, r, req)
@@ -32,6 +33,14 @@ func (h *Handler) SaveLog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var logDecoded models.RawLog
+	if err := json.Unmarshal([]byte(req.Log), &logDecoded); err != nil {
+		utils.WriteJSON(w, http.StatusBadRequest, res)
+		return
+	}
+
+	req.LogDecoded = logDecoded
+
 	err = h.Service.SaveLog(ctx, req)
 	if err != nil {
 		utils.ErrorJSON(w, err, http.StatusInternalServerError)
@@ -40,4 +49,50 @@ func (h *Handler) SaveLog(w http.ResponseWriter, r *http.Request) {
 
 	res.Message = "Log saved"
 	utils.WriteJSON(w, http.StatusOK, res)
+}
+
+func (h *Handler) SaveBulkLog(w http.ResponseWriter, r *http.Request) {
+	ctx := utils.ContextWithValueIfNotPresent(r.Context(), constants.TraceID, utils.GetUUID())
+	Logger := logger.CreateFileLoggerWithCtx(ctx)
+
+	var req []*models.FluentBitReq
+	res := &models.HTTPResponse{Data: map[string]any{}, Status: "success", Message: constants.Empty}
+
+	err := utils.ReadJSON(w, r, &req)
+	if err != nil {
+		Logger.Errorw("error reading request", "error", err)
+		res.Status = "error"
+		res.Message = "Invalid Request"
+		utils.WriteJSON(w, http.StatusBadRequest, res)
+		return
+	}
+
+	errs := utils.ValidateParams(req)
+	if errs != nil {
+		res.Status = "error"
+		res.Message = errs[0].Error()
+		utils.WriteJSON(w, http.StatusBadRequest, res)
+		return
+	}
+
+	for _, fluentBitLog := range req {
+
+		var rawLog models.RawLog
+		if err := json.Unmarshal([]byte(fluentBitLog.Log), &rawLog); err != nil {
+			utils.WriteJSON(w, http.StatusBadRequest, res)
+			return
+		}
+
+		fluentBitLog.LogDecoded = rawLog
+	}
+
+	err = h.Service.SaveBulkLog(ctx, req)
+	if err != nil {
+		utils.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	res.Message = "Logs saved"
+	utils.WriteJSON(w, http.StatusOK, res)
+
 }

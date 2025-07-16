@@ -7,7 +7,8 @@ import (
 )
 
 type IService interface {
-	SaveLog(ctx context.Context, log *models.RawLog) error
+	SaveLog(ctx context.Context, log *models.FluentBitReq) error
+	SaveBulkLog(ctx context.Context, log []*models.FluentBitReq) error
 }
 
 type Service struct {
