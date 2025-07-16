@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log-aggregator/internal/constants"
 	"log-aggregator/internal/logger"
 	"log-aggregator/internal/models"
 	"regexp"
@@ -91,7 +92,7 @@ func setTimestamp(log *models.Log, fluentbitLog *models.FluentBitReq) error {
 		timestamp = fluentbitLog.LogDecoded.Timestamp
 	}
 
-	if fluentbitLog.LogDecoded.TS != "" {
+	if timestamp == constants.Empty && fluentbitLog.LogDecoded.TS != "" {
 		timestamp = fluentbitLog.LogDecoded.TS
 	}
 
