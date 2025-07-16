@@ -15,7 +15,7 @@ func (svc *Service) SaveLog(ctx context.Context, fluentbitLog *models.FluentBitR
 
 	Logger := logger.CreateFileLoggerWithCtx(ctx)
 
-	log, err := processFluentBitLog(fluentbitLog)
+	log, err := processFluentBitLog(ctx, fluentbitLog)
 	if err != nil {
 		Logger.Errorf("Failed to process fluentbit log: %v", err)
 		return err
@@ -36,7 +36,7 @@ func (svc *Service) SaveBulkLog(ctx context.Context, fluentBitLogs []*models.Flu
 	var logs []*models.Log
 
 	for _, fluentbitLog := range fluentBitLogs {
-		log, err := processFluentBitLog(fluentbitLog)
+		log, err := processFluentBitLog(ctx, fluentbitLog)
 		if err != nil {
 			Logger.Errorf("Failed to process fluentbit log: %v", err)
 			return err
@@ -52,7 +52,7 @@ func (svc *Service) SaveBulkLog(ctx context.Context, fluentBitLogs []*models.Flu
 	return nil
 }
 
-func processFluentBitLog(fluentbitLog *models.FluentBitReq) (*models.Log, error) {
+func processFluentBitLog(ctx context.Context, fluentbitLog *models.FluentBitReq) (*models.Log, error) {
 
 	log := &models.Log{
 		Namespace: fluentbitLog.LogDecoded.Namespace,
@@ -63,24 +63,25 @@ func processFluentBitLog(fluentbitLog *models.FluentBitReq) (*models.Log, error)
 		Source:    fluentbitLog.Log,
 	}
 
-	err := setTimestamp(log, fluentbitLog)
+	err := setTimestamp(ctx, log, fluentbitLog)
 	if err != nil {
 		return nil, err
 	}
 
-	setTraceID(log, fluentbitLog)
+	setTraceID(ctx, log, fluentbitLog)
 
-	err = setFieldNameWithValues(log, fluentbitLog)
+	err = setFieldNameWithValues(ctx, log, fluentbitLog)
 	if err != nil {
 		return nil, err
 	}
 
-	setLogLevel(log, fluentbitLog)
+	setLogLevel(ctx, log, fluentbitLog)
 
 	return log, nil
 }
 
-func setTimestamp(log *models.Log, fluentbitLog *models.FluentBitReq) error {
+func setTimestamp(ctx context.Context, log *models.Log, fluentbitLog *models.FluentBitReq) error {
+	Logger := logger.CreateFileLoggerWithCtx(ctx)
 	layouts := []string{
 		"2006-01-02T15:04:05.000-0700",
 		"2006-01-02T15:04:05.000",
@@ -105,7 +106,7 @@ func setTimestamp(log *models.Log, fluentbitLog *models.FluentBitReq) error {
 			}
 		}
 		if err != nil {
-			fmt.Println("invalid timestamp", "timestamp", timestamp, "error", err)
+			Logger.Errorw("invalid timestamp", "timestamp", timestamp, "error", err)
 			return err
 		}
 	}
@@ -115,7 +116,7 @@ func setTimestamp(log *models.Log, fluentbitLog *models.FluentBitReq) error {
 	return nil
 }
 
-func setTraceID(log *models.Log, fluentbitLog *models.FluentBitReq) {
+func setTraceID(ctx context.Context, log *models.Log, fluentbitLog *models.FluentBitReq) {
 	if fluentbitLog.LogDecoded.TraceID != "" {
 		log.TraceID = &fluentbitLog.LogDecoded.TraceID
 	}
@@ -126,7 +127,7 @@ func setTraceID(log *models.Log, fluentbitLog *models.FluentBitReq) {
 	}
 }
 
-func setFieldNameWithValues(log *models.Log, fluentbitLog *models.FluentBitReq) error {
+func setFieldNameWithValues(ctx context.Context, log *models.Log, fluentbitLog *models.FluentBitReq) error {
 	var logMap map[string]interface{}
 	data, _ := json.Marshal(fluentbitLog.LogDecoded)
 	err := json.Unmarshal(data, &logMap)
@@ -160,7 +161,7 @@ func setFieldNameWithValues(log *models.Log, fluentbitLog *models.FluentBitReq) 
 	return nil
 }
 
-func setLogLevel(log *models.Log, fluentbitLog *models.FluentBitReq) {
+func setLogLevel(ctx context.Context, log *models.Log, fluentbitLog *models.FluentBitReq) {
 	re := regexp.MustCompile(`\x1b\[[0-9;]*m`)
 	cleanLevel := re.ReplaceAllString(fluentbitLog.LogDecoded.Level, "")
 

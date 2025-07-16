@@ -43,6 +43,7 @@ func (h *Handler) SaveLog(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Service.SaveLog(ctx, req)
 	if err != nil {
+		Logger.Errorw("error saving log", "error", err)
 		utils.ErrorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
@@ -91,6 +92,7 @@ func (h *Handler) SaveBulkLog(w http.ResponseWriter, r *http.Request) {
 
 	err = h.Service.SaveBulkLog(ctx, req)
 	if err != nil {
+		Logger.Errorw("error saving bulk log", "error", err)
 		utils.ErrorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
