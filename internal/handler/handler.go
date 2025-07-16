@@ -17,6 +17,7 @@ func NewHandler(service service.IService) *Handler {
 func (h *Handler) SetupRoutes(r *mux.Router) {
 
 	public := r.NewRoute().Subrouter()
+	//public.Use(middleware.PrettyPrint)
 
 	// user
 	public.HandleFunc("/log/save", h.SaveLog).Methods(http.MethodPost)

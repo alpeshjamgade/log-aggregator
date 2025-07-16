@@ -52,12 +52,39 @@ func (svc *Service) SaveBulkLog(ctx context.Context, fluentBitLogs []*models.Flu
 }
 
 func processFluentBitLog(fluentbitLog *models.FluentBitReq) (*models.Log, error) {
-	parsedTime, err := time.Parse(time.RFC3339Nano, fluentbitLog.LogDecoded.Timestamp)
+
+	layouts := []string{
+		"2006-01-02T15:04:05.000-0700",
+		"2006-01-02T15:04:05.000",
+		"2006-01-02T15:04:05",
+	}
+
+	var timestamp string
+	if fluentbitLog.LogDecoded.Timestamp != "" {
+		timestamp = fluentbitLog.LogDecoded.Timestamp
+	}
+
+	if fluentbitLog.LogDecoded.TS != "" {
+		timestamp = fluentbitLog.LogDecoded.TS
+	}
+
+	parsedTime, err := time.Parse(time.RFC3339Nano, timestamp)
 	if err != nil {
-		parsedTime, err = time.Parse("2006-01-02T15:04:05.000-0700", fluentbitLog.LogDecoded.Timestamp) // your format
-		if err != nil {
-			return nil, fmt.Errorf("invalid timestamp: %w", err)
+		for _, layout := range layouts {
+			parsedTime, err = time.Parse(layout, timestamp)
+			if err == nil {
+				break
+			}
 		}
+		if err != nil {
+			fmt.Println("invalid timestamp", "timestamp", timestamp, "error", err)
+			return nil, err
+		}
+
+		//parsedTime, err = time.Parse("2006-01-02T15:04:05.000-0700", fluentbitLog.LogDecoded.Timestamp) // your format
+		//if err != nil {
+		//	return nil, fmt.Errorf("invalid timestamp: %w", err)
+		//}
 	}
 
 	re := regexp.MustCompile(`\x1b\[[0-9;]*m`)
@@ -66,16 +93,20 @@ func processFluentBitLog(fluentbitLog *models.FluentBitReq) (*models.Log, error)
 	log := &models.Log{
 		Timestamp: parsedTime,
 		Namespace: fluentbitLog.LogDecoded.Namespace,
-		Host:      fluentbitLog.LogDecoded.Host,
-		Service:   fluentbitLog.LogDecoded.Service,
+		Host:      fluentbitLog.Kubernetes.Host,
+		Service:   fluentbitLog.Kubernetes.Labels.App,
 		Level:     cleanLevel,
 		TraceID:   &fluentbitLog.LogDecoded.TraceID,
+		UserID:    fluentbitLog.LogDecoded.LoginID,
 		Source:    fluentbitLog.Log,
 	}
 
 	var logMap map[string]interface{}
 	data, _ := json.Marshal(fluentbitLog.LogDecoded)
-	json.Unmarshal(data, &logMap)
+	err = json.Unmarshal(data, &logMap)
+	if err != nil {
+		return nil, err
+	}
 
 	for k, v := range logMap {
 		switch val := v.(type) {

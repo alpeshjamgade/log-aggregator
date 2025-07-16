@@ -6,7 +6,7 @@ CREATE TABLE logs
     host          LowCardinality(String),
     service       LowCardinality(String),
     level         LowCardinality(String),
-    user_id       Nullable(UInt64),
+    user_id       LowCardinality(String),
     session_id    Nullable(String),
     trace_id      Nullable(String),
     _source       String,

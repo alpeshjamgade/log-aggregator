@@ -77,8 +77,11 @@ func (h *Handler) SaveBulkLog(w http.ResponseWriter, r *http.Request) {
 
 	for _, fluentBitLog := range req {
 
+		cleanLog := utils.ExtractJSONFromLog(fluentBitLog.Log)
+
 		var rawLog models.RawLog
-		if err := json.Unmarshal([]byte(fluentBitLog.Log), &rawLog); err != nil {
+		if err := json.Unmarshal([]byte(cleanLog), &rawLog); err != nil {
+			res.Message = errs[0].Error()
 			utils.WriteJSON(w, http.StatusBadRequest, res)
 			return
 		}

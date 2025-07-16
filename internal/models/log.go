@@ -10,7 +10,7 @@ type Log struct {
 	Host         string                 `json:"host" db:"host"`
 	Service      string                 `json:"service" db:"service"`
 	Level        string                 `json:"level" db:"level"`
-	UserID       *uint64                `json:"user_id,omitempty" db:"user_id"`
+	UserID       string                 `json:"user_id,omitempty" db:"user_id"`
 	SessionID    *string                `json:"session_id,omitempty" db:"session_id"`
 	TraceID      *string                `json:"trace_id,omitempty" db:"trace_id"`
 	Data         map[string]interface{} `json:"data"` // dynamic fields
@@ -27,6 +27,7 @@ type Log struct {
 
 type RawLog struct {
 	Timestamp string `json:"timestamp"`
+	TS        string `json:"ts"`
 	Level     string `json:"level"`
 	Service   string `json:"service"`
 	TraceID   string `json:"trace_id,omitempty"`
@@ -34,10 +35,30 @@ type RawLog struct {
 	Caller    string `json:"caller,omitempty"`
 	Namespace string `json:"namespace,omitempty"`
 	Host      string `json:"host,omitempty"`
+	ClientID  string `json:"client_id,omitempty"`
+	LoginID   string `json:"login_id,omitempty"`
 }
 
 type FluentBitReq struct {
-	Date       float64 `json:"date"`
-	Log        string  `json:"log"`
-	LogDecoded RawLog  `json:"log_decoded"`
+	Date       float64            `json:"date"`
+	Log        string             `json:"log"`
+	LogDecoded RawLog             `json:"log_decoded"`
+	Kubernetes KubernetesMetadata `json:"kubernetes"`
+}
+
+type KubernetesMetadata struct {
+	PodName        string          `json:"pod_name"`
+	NamespaceName  string          `json:"namespace_name"`
+	PodID          string          `json:"pod_id"`
+	Labels         KubernetesLabel `json:"labels"`
+	Annotations    map[string]any  `json:"annotations"`
+	Host           string          `json:"host"`
+	ContainerName  string          `json:"container_name"`
+	DockerID       string          `json:"docker_id"`
+	ContainerHash  string          `json:"container_hash"`
+	ContainerImage string          `json:"container_image"`
+}
+
+type KubernetesLabel struct {
+	App string `json:"app"`
 }

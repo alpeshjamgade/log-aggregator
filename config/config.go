@@ -13,6 +13,9 @@ var (
 	LogFilePath        = "/tmp/"
 	HttpPort           = "8080"
 	ClickHouseDBAddr   = "localhost:9000"
+	ClickHouseDatabase = "log_aggregator"
+	ClickHouseUsername = "default"
+	ClickHousePassword = ""
 	SessionKey         = ""
 	RMQUrl             = "amqp://guest:guest@localhost:5672"
 	LogFilePathsToSeek []string
@@ -43,7 +46,10 @@ func LoadConfig() error {
 	LogFileMaxSize = viper.GetInt("LOG_FILE_MAX_SIZE")
 	LogFilePath = viper.GetString("LOG_FILE_PATH")
 	HttpPort = viper.GetString("HTTP_PORT")
-	ClickHouseDBAddr = viper.GetString("CLICKEHOUSE_DB_ADDR")
+	ClickHouseDBAddr = viper.GetString("CLICKHOUSE_DB_ADDR")
+	ClickHouseDatabase = viper.GetString("CLICKHOUSE_DATABASE")
+	ClickHouseUsername = viper.GetString("CLICKHOUSE_USERNAME")
+	ClickHousePassword = viper.GetString("CLICKHOUSE_PASSWORD")
 	SessionKey = viper.GetString("SESSION_KEY")
 	RMQUrl = viper.GetString("RMQ_URL")
 	LogFilePathsToSeek = viper.GetStringSlice("LOG_FILE_PATHS_TO_SEEK")
@@ -58,7 +64,10 @@ func setDefaults() {
 	viper.SetDefault("LOG_FILE_MAX_SIZE", LogFileMaxSize)
 	viper.SetDefault("LOG_FILE_PATH", LogFilePath)
 	viper.SetDefault("HTTP_PORT", HttpPort)
-	viper.SetDefault("CLICKEHOUSE_DB_ADDR", ClickHouseDBAddr)
+	viper.SetDefault("CLICKHOUSE_DB_ADDR", ClickHouseDBAddr)
+	viper.SetDefault("CLICKHOUSE_DATABASE", ClickHouseDatabase)
+	viper.SetDefault("CLICKHOUSE_USERNAME", ClickHouseUsername)
+	viper.SetDefault("CLICKHOUSE_PASSWORD", ClickHousePassword)
 	viper.SetDefault("SESSION_KEY", SessionKey)
 	viper.SetDefault("RMQ_URL", RMQUrl)
 	viper.SetDefault("LOG_FILE_PATHS_TO_SEEK", LogFilePathsToSeek)

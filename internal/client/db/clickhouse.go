@@ -4,6 +4,7 @@ import (
 	"context"
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
+	"log-aggregator/config"
 	"log-aggregator/internal/logger"
 	"time"
 )
@@ -30,7 +31,9 @@ func (c *ClickHouseDB) Connect(ctx context.Context) error {
 		c.Conn, _ = clickhouse.Open(&clickhouse.Options{
 			Addr: []string{c.DatabaseURL},
 			Auth: clickhouse.Auth{
-				Database: "log_aggregator",
+				Database: config.ClickHouseDatabase,
+				Username: config.ClickHouseUsername,
+				Password: config.ClickHousePassword,
 			},
 			DialTimeout:      time.Duration(10) * time.Second,
 			MaxOpenConns:     100,
