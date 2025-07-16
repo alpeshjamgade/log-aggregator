@@ -88,7 +88,7 @@ func (consumer *Consumer) startWorker() {
 
 	go func() {
 		for d := range msgs {
-			consumer.repo.InsertEvent(string(d.Body))
+			consumer.repo.InsertLog(string(d.Body))
 
 			log.Printf("Received a message: %s", d.Body)
 		}

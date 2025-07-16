@@ -19,5 +19,5 @@ func (h *Handler) SetupRoutes(r *mux.Router) {
 	public := r.NewRoute().Subrouter()
 
 	// user
-	public.HandleFunc("/event/save", h.SaveEvent).Methods(http.MethodPost)
+	public.HandleFunc("/log/save", h.SaveLog).Methods(http.MethodPost)
 }

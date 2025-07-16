@@ -8,11 +8,11 @@ import (
 	"net/http"
 )
 
-func (h *Handler) SaveEvent(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) SaveLog(w http.ResponseWriter, r *http.Request) {
 	ctx := utils.ContextWithValueIfNotPresent(r.Context(), constants.TraceID, utils.GetUUID())
 	Logger := logger.CreateFileLoggerWithCtx(ctx)
 
-	req := &models.Event{}
+	req := &models.RawLog{}
 	res := &models.HTTPResponse{Data: map[string]any{}, Status: "success", Message: constants.Empty}
 
 	err := utils.ReadJSON(w, r, req)
@@ -32,12 +32,12 @@ func (h *Handler) SaveEvent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.Service.SaveEvent(ctx, req)
+	err = h.Service.SaveLog(ctx, req)
 	if err != nil {
 		utils.ErrorJSON(w, err, http.StatusInternalServerError)
 		return
 	}
 
-	res.Message = "Event saved"
+	res.Message = "Log saved"
 	utils.WriteJSON(w, http.StatusOK, res)
 }

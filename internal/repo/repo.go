@@ -8,7 +8,7 @@ import (
 )
 
 type IRepo interface {
-	SaveEvent(ctx context.Context, event *models.Event) error
+	SaveLog(ctx context.Context, log *models.Log) error
 }
 
 type Repo struct {
