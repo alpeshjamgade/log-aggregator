@@ -31,3 +31,12 @@ func ExtractJSONFromLog(s string) string {
 	}
 	return s[start:]
 }
+
+func ExtractClientIDFromMessage(msg string) string {
+	re := regexp.MustCompile(`client:\s*([A-Za-z0-9_]+)`)
+	match := re.FindStringSubmatch(msg)
+	if len(match) > 1 {
+		return match[1]
+	}
+	return ""
+}

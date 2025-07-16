@@ -31,6 +31,7 @@ type RawLog struct {
 	Level     string `json:"level"`
 	Service   string `json:"service"`
 	TraceID   string `json:"trace_id,omitempty"`
+	RequestID string `json:"request_id,omitempty"`
 	Msg       string `json:"msg,omitempty"`
 	Caller    string `json:"caller,omitempty"`
 	Namespace string `json:"namespace,omitempty"`

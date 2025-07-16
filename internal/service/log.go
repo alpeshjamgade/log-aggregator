@@ -53,6 +53,33 @@ func (svc *Service) SaveBulkLog(ctx context.Context, fluentBitLogs []*models.Flu
 
 func processFluentBitLog(fluentbitLog *models.FluentBitReq) (*models.Log, error) {
 
+	log := &models.Log{
+		Namespace: fluentbitLog.LogDecoded.Namespace,
+		Host:      fluentbitLog.Kubernetes.Host,
+		Service:   fluentbitLog.Kubernetes.Labels.App,
+		TraceID:   &fluentbitLog.LogDecoded.TraceID,
+		UserID:    fluentbitLog.LogDecoded.LoginID,
+		Source:    fluentbitLog.Log,
+	}
+
+	err := setTimestamp(log, fluentbitLog)
+	if err != nil {
+		return nil, err
+	}
+
+	setTraceID(log, fluentbitLog)
+
+	err = setFieldNameWithValues(log, fluentbitLog)
+	if err != nil {
+		return nil, err
+	}
+
+	setLogLevel(log, fluentbitLog)
+
+	return log, nil
+}
+
+func setTimestamp(log *models.Log, fluentbitLog *models.FluentBitReq) error {
 	layouts := []string{
 		"2006-01-02T15:04:05.000-0700",
 		"2006-01-02T15:04:05.000",
@@ -78,34 +105,32 @@ func processFluentBitLog(fluentbitLog *models.FluentBitReq) (*models.Log, error)
 		}
 		if err != nil {
 			fmt.Println("invalid timestamp", "timestamp", timestamp, "error", err)
-			return nil, err
+			return err
 		}
-
-		//parsedTime, err = time.Parse("2006-01-02T15:04:05.000-0700", fluentbitLog.LogDecoded.Timestamp) // your format
-		//if err != nil {
-		//	return nil, fmt.Errorf("invalid timestamp: %w", err)
-		//}
 	}
 
-	re := regexp.MustCompile(`\x1b\[[0-9;]*m`)
-	cleanLevel := re.ReplaceAllString(fluentbitLog.LogDecoded.Level, "")
+	log.Timestamp = parsedTime
 
-	log := &models.Log{
-		Timestamp: parsedTime,
-		Namespace: fluentbitLog.LogDecoded.Namespace,
-		Host:      fluentbitLog.Kubernetes.Host,
-		Service:   fluentbitLog.Kubernetes.Labels.App,
-		Level:     cleanLevel,
-		TraceID:   &fluentbitLog.LogDecoded.TraceID,
-		UserID:    fluentbitLog.LogDecoded.LoginID,
-		Source:    fluentbitLog.Log,
+	return nil
+}
+
+func setTraceID(log *models.Log, fluentbitLog *models.FluentBitReq) {
+	if fluentbitLog.LogDecoded.TraceID != "" {
+		log.TraceID = &fluentbitLog.LogDecoded.TraceID
 	}
 
+	// check for requestID if traceID is still empty
+	if log.TraceID == nil && fluentbitLog.LogDecoded.RequestID != "" {
+		log.TraceID = &fluentbitLog.LogDecoded.RequestID
+	}
+}
+
+func setFieldNameWithValues(log *models.Log, fluentbitLog *models.FluentBitReq) error {
 	var logMap map[string]interface{}
 	data, _ := json.Marshal(fluentbitLog.LogDecoded)
-	err = json.Unmarshal(data, &logMap)
+	err := json.Unmarshal(data, &logMap)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for k, v := range logMap {
@@ -127,9 +152,16 @@ func processFluentBitLog(fluentbitLog *models.FluentBitReq) (*models.Log, error)
 			log.BoolValues = append(log.BoolValues, fmt.Sprintf("%v", val))
 		default:
 			// Skip unsupported types
-			return nil, fmt.Errorf("unsupported type for key %s: %T", k, val)
+			return fmt.Errorf("unsupported type for key %s: %T", k, val)
 		}
 	}
 
-	return log, nil
+	return nil
+}
+
+func setLogLevel(log *models.Log, fluentbitLog *models.FluentBitReq) {
+	re := regexp.MustCompile(`\x1b\[[0-9;]*m`)
+	cleanLevel := re.ReplaceAllString(fluentbitLog.LogDecoded.Level, "")
+
+	log.Level = cleanLevel
 }
