@@ -38,11 +38,11 @@ func (svc *Service) SaveBulkLog(ctx context.Context, fluentBitLogs []*models.Flu
 	for _, fluentbitLog := range fluentBitLogs {
 		log, err := processFluentBitLog(ctx, fluentbitLog)
 		if err != nil {
-			Logger.Errorf("Failed to process fluentbit log: %v", err)
-			return err
+			Logger.Warnf("Failed to process fluentbit. Skipping!! err: %v, log: %v", err, fluentbitLog)
+			continue
+		} else {
+			logs = append(logs, log)
 		}
-
-		logs = append(logs, log)
 	}
 
 	err := svc.repo.SaveBulkLog(ctx, logs)
