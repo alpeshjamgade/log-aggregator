@@ -58,7 +58,7 @@ func processFluentBitLog(ctx context.Context, fluentbitLog *models.FluentBitReq)
 		Namespace: fluentbitLog.LogDecoded.Namespace,
 		Host:      fluentbitLog.Kubernetes.Host,
 		Service:   fluentbitLog.Kubernetes.Labels.App,
-		TraceID:   &fluentbitLog.LogDecoded.TraceID,
+		TraceID:   fluentbitLog.LogDecoded.TraceID,
 		UserID:    fluentbitLog.LogDecoded.LoginID,
 		Source:    fluentbitLog.Log,
 	}
@@ -118,12 +118,12 @@ func setTimestamp(ctx context.Context, log *models.Log, fluentbitLog *models.Flu
 
 func setTraceID(ctx context.Context, log *models.Log, fluentbitLog *models.FluentBitReq) {
 	if fluentbitLog.LogDecoded.TraceID != "" {
-		log.TraceID = &fluentbitLog.LogDecoded.TraceID
+		log.TraceID = fluentbitLog.LogDecoded.TraceID
 	}
 
 	// check for requestID if traceID is still empty
-	if log.TraceID == nil && fluentbitLog.LogDecoded.RequestID != "" {
-		log.TraceID = &fluentbitLog.LogDecoded.RequestID
+	if log.TraceID == "" && fluentbitLog.LogDecoded.RequestID != "" {
+		log.TraceID = fluentbitLog.LogDecoded.RequestID
 	}
 }
 

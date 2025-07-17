@@ -11,8 +11,8 @@ type Log struct {
 	Service      string                 `json:"service" db:"service"`
 	Level        string                 `json:"level" db:"level"`
 	UserID       string                 `json:"user_id,omitempty" db:"user_id"`
-	SessionID    *string                `json:"session_id,omitempty" db:"session_id"`
-	TraceID      *string                `json:"trace_id,omitempty" db:"trace_id"`
+	SessionID    string                 `json:"session_id,omitempty" db:"session_id"`
+	TraceID      string                 `json:"trace_id,omitempty" db:"trace_id"`
 	Data         map[string]interface{} `json:"data"` // dynamic fields
 	Source       string                 `json:"_source" db:"_source"`
 	StringNames  []string               `json:"string_names" db:"string_names"`
