@@ -22,4 +22,5 @@ func (h *Handler) SetupRoutes(r *mux.Router) {
 	// user
 	public.HandleFunc("/log/save", h.SaveLog).Methods(http.MethodPost)
 	public.HandleFunc("/log/save/bulk", h.SaveBulkLog).Methods(http.MethodPost)
+	public.HandleFunc("/log/save/bulk/v2", h.SaveBulkLogV2).Methods(http.MethodPost)
 }

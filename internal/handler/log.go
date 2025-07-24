@@ -101,3 +101,53 @@ func (h *Handler) SaveBulkLog(w http.ResponseWriter, r *http.Request) {
 	utils.WriteJSON(w, http.StatusOK, res)
 
 }
+
+// SaveBulkLogV2 flattens received log and saves into db
+func (h *Handler) SaveBulkLogV2(w http.ResponseWriter, r *http.Request) {
+	ctx := utils.ContextWithValueIfNotPresent(r.Context(), constants.TraceID, utils.GetUUID())
+	Logger := logger.CreateFileLoggerWithCtx(ctx)
+
+	var req []map[string]any
+	res := &models.HTTPResponse{Data: map[string]any{}, Status: "success", Message: constants.Empty}
+
+	err := utils.ReadJSON(w, r, &req)
+	if err != nil {
+		Logger.Errorw("error reading request", "error", err)
+		res.Status = "error"
+		res.Message = "Invalid Request"
+		utils.WriteJSON(w, http.StatusBadRequest, res)
+		return
+	}
+
+	var reqFlattened []map[string]any
+	for _, record := range req {
+		recordFlattened := utils.FlattenMap("", record)
+
+		if recordFlattened["log"] != nil {
+			jsonEncodedString := utils.ExtractJSONFromLog(recordFlattened["log"].(string))
+			var logDecoded map[string]any
+			if err := json.Unmarshal([]byte(jsonEncodedString), &logDecoded); err != nil {
+				res.Message = err.Error()
+				utils.WriteJSON(w, http.StatusBadRequest, res)
+				return
+			}
+
+			recordFlattened["log"] = utils.FlattenMap("", logDecoded)
+		}
+
+		reqFlattened = append(reqFlattened, recordFlattened)
+
+	}
+
+	err = h.Service.SaveBulkLogV2(ctx, reqFlattened)
+	if err != nil {
+		Logger.Errorw("error saving bulk log", "error", err)
+		utils.ErrorJSON(w, err, http.StatusInternalServerError)
+		return
+	}
+
+	res.Message = "Logs saved"
+	res.Data = reqFlattened
+	utils.WriteJSON(w, http.StatusOK, res)
+
+}

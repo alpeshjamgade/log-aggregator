@@ -2,6 +2,7 @@ package utils
 
 import (
 	"context"
+	"fmt"
 	"github.com/google/uuid"
 	"regexp"
 	"strings"
@@ -39,4 +40,37 @@ func ExtractClientIDFromMessage(msg string) string {
 		return match[1]
 	}
 	return ""
+}
+
+func FlattenMap(prefix string, input map[string]any) map[string]any {
+	flatMap := make(map[string]any)
+
+	for k, v := range input {
+		fullKey := k
+		if prefix != "" {
+			fullKey = prefix + "." + k
+		}
+
+		switch child := v.(type) {
+		case map[string]any:
+			nested := FlattenMap(fullKey, child)
+			for nk, nv := range nested {
+				flatMap[nk] = nv
+			}
+		case map[any]any:
+			// convert to map[string]any before flattening
+			strMap := make(map[string]any)
+			for key, val := range child {
+				strMap[fmt.Sprintf("%v", key)] = val
+			}
+			nested := FlattenMap(fullKey, strMap)
+			for nk, nv := range nested {
+				flatMap[nk] = nv
+			}
+		default:
+			flatMap[fullKey] = v
+		}
+	}
+
+	return flatMap
 }

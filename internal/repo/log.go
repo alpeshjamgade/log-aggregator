@@ -14,7 +14,7 @@ func (repo *Repo) SaveLog(ctx context.Context, log *models.Log) error {
 	query := `
 		INSERT INTO logs (
 			_timestamp, _namespace, host, service, level,
-			user_id, session_id, trace_id,
+			login_id, client_id, session_id, trace_id,
 			_source,
 			string_names, string_values,
 			int_names, int_values,
@@ -29,7 +29,8 @@ func (repo *Repo) SaveLog(ctx context.Context, log *models.Log) error {
 		log.Host,
 		log.Service,
 		log.Level,
-		log.UserID,
+		log.LoginID,
+		log.ClientID,
 		log.SessionID,
 		log.TraceID,
 		log.Source,
@@ -53,7 +54,7 @@ func (repo *Repo) SaveBulkLog(ctx context.Context, logs []*models.Log) error {
 	query := `
 		INSERT INTO logs (
 			_timestamp, _namespace, host, service, level,
-			user_id, session_id, trace_id,
+			login_id, client_id, session_id, trace_id,
 			_source,
 			string_names, string_values,
 			int_names, int_values,
@@ -76,7 +77,8 @@ func (repo *Repo) SaveBulkLog(ctx context.Context, logs []*models.Log) error {
 			log.Host,
 			log.Service,
 			log.Level,
-			log.UserID,
+			log.LoginID,
+			log.ClientID,
 			log.SessionID,
 			log.TraceID,
 			log.Source,

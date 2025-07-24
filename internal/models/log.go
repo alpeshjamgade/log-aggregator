@@ -10,7 +10,8 @@ type Log struct {
 	Host         string                 `json:"host" db:"host"`
 	Service      string                 `json:"service" db:"service"`
 	Level        string                 `json:"level" db:"level"`
-	UserID       string                 `json:"user_id,omitempty" db:"user_id"`
+	LoginID      string                 `json:"login_id,omitempty" db:"login_id"`
+	ClientID     string                 `json:"client_id,omitempty" db:"client_id"`
 	SessionID    string                 `json:"session_id,omitempty" db:"session_id"`
 	TraceID      string                 `json:"trace_id,omitempty" db:"trace_id"`
 	Data         map[string]interface{} `json:"data"` // dynamic fields

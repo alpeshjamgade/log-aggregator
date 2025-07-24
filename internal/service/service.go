@@ -9,6 +9,7 @@ import (
 type IService interface {
 	SaveLog(ctx context.Context, log *models.FluentBitReq) error
 	SaveBulkLog(ctx context.Context, log []*models.FluentBitReq) error
+	SaveBulkLogV2(ctx context.Context, log []map[string]any) error
 }
 
 type Service struct {

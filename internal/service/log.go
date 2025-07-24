@@ -59,7 +59,8 @@ func processFluentBitLog(ctx context.Context, fluentbitLog *models.FluentBitReq)
 		Host:      fluentbitLog.Kubernetes.Host,
 		Service:   fluentbitLog.Kubernetes.Labels.App,
 		TraceID:   fluentbitLog.LogDecoded.TraceID,
-		UserID:    fluentbitLog.LogDecoded.LoginID,
+		LoginID:   fluentbitLog.LogDecoded.LoginID,
+		ClientID:  fluentbitLog.LogDecoded.ClientID,
 		Source:    fluentbitLog.Log,
 	}
 
@@ -76,6 +77,8 @@ func processFluentBitLog(ctx context.Context, fluentbitLog *models.FluentBitReq)
 	}
 
 	setLogLevel(ctx, log, fluentbitLog)
+
+	setUserID(ctx, log, fluentbitLog)
 
 	return log, nil
 }
@@ -166,4 +169,74 @@ func setLogLevel(ctx context.Context, log *models.Log, fluentbitLog *models.Flue
 	cleanLevel := re.ReplaceAllString(fluentbitLog.LogDecoded.Level, "")
 
 	log.Level = cleanLevel
+}
+
+func setUserID(ctx context.Context, log *models.Log, fluentbitLog *models.FluentBitReq) {
+	Logger := logger.CreateFileLoggerWithCtx(ctx)
+
+	if fluentbitLog.LogDecoded.LoginID != "" {
+		log.LoginID = fluentbitLog.LogDecoded.LoginID
+	}
+
+	if fluentbitLog.LogDecoded.ClientID != "" {
+		log.LoginID = fluentbitLog.LogDecoded.ClientID
+	}
+
+	clientID, err := ParseKeywordFromText(fluentbitLog.LogDecoded.Msg, "client_id")
+	if err != nil {
+		Logger.Debugf("error while parsing keyword %s from log message", "client_id")
+	} else {
+		log.ClientID = clientID
+	}
+
+	loginID, err := ParseKeywordFromText(fluentbitLog.LogDecoded.Msg, "login_id")
+	if err != nil {
+		Logger.Debugf("error while parsing keyword %s from log message", "login_id")
+	} else {
+		log.ClientID = loginID
+	}
+}
+
+func ParseKeywordFromText(log string, key string) (string, error) {
+	regexStr := fmt.Sprintf(`(?i)%s[^A-Za-z0-9]*([A-Za-z0-9_-]+)`, regexp.QuoteMeta(key))
+	re := regexp.MustCompile(regexStr)
+	matches := re.FindStringSubmatch(log)
+	if len(matches) < 2 {
+		return "", fmt.Errorf("key not found")
+	}
+	return matches[1], nil
+}
+
+func (svc *Service) SaveBulkLogV2(ctx context.Context, flattenLogs []map[string]any) error {
+	Logger := logger.CreateFileLoggerWithCtx(ctx)
+
+	var logs []*models.Log
+
+	for _, flattenLog := range flattenLogs {
+		log, err := processFlattenLog(ctx, flattenLog)
+
+		if err != nil {
+			Logger.Warnf("Failed to process fluentbit. Skipping!! err: %v, log: %v", err, flattenLog)
+			continue
+		} else {
+			logs = append(logs, log)
+		}
+	}
+
+	err := svc.repo.SaveBulkLog(ctx, logs)
+	if err != nil {
+
+		Logger.Errorf("Error while saving log")
+		return err
+	}
+
+	return nil
+}
+
+func processFlattenLog(ctx context.Context, flattenLog map[string]any) (*models.Log, error) {
+
+	log := &models.Log{
+		Host: flattenLog["kubernetes.host"].(string),
+	}
+	return log, nil
 }
