@@ -40,7 +40,7 @@ func (app *App) Start() {
 	if config.LogFile {
 		Logger = logger.CreateFileLoggerWithCtx(ctx)
 	} else {
-		Logger = logger.CreateFileLoggerWithCtx(ctx)
+		Logger = logger.CreateLoggerWithCtx(ctx)
 	}
 
 	Router := GetRouter()
